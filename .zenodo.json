@@ -1,0 +1,40 @@
+{
+  "title": "Sub-cell eigenmode descriptors for metamaterial homogenisation surrogates: code, descriptors, results and preprint",
+  "upload_type": "software",
+  "description": "<p>Code, precomputed sub-cell elastodynamic eigenmode descriptors, complete experimental results and a venue-neutral preprint for a study of why machine-learned surrogates for the homogenised stiffness tensor C^H fail to transfer across unseen unit-cell topologies.</p><p>Classical homogenisation obtains C^H by volume-averaging the microscopic stress. Averaging is a projection: it retains the two rigid-translation modes of the unit cell and discards every other sub-cell degree of freedom. This record measures the discarded content by solving the Gamma-point elastodynamic eigenproblem on the same periodic operator that produces C^H. Four families in the benchmark have C11/C22 = 1.000 to machine precision, carrying no directional information, yet their sub-cell mode characters are well separated. Three numbers describing how the softest sub-cell mode divides its motion between rotation, dilatation and shear predict C22 on 18 unseen topological families at R2 = +0.356, where 2304 raw pixels give -0.008 and a free solid-fraction control gives +0.082, at a quarter of the cost of one homogenisation.</p><p>The deposit includes negative results as well as positive ones: the descriptor does not rescue a pixel surrogate, does not work as a training-family selection criterion, and an earlier per-eigenvector definition of mode character (also included) produced a false negative that is analysed in the preprint.</p><p>Requires only NumPy, SciPy, scikit-learn and Matplotlib; developed and run on a single CPU core. The unit-cell dataset is archived separately at doi 10.5281/zenodo.21734948.</p>",
+  "creators": [
+    {
+      "name": "Mashiah, David",
+      "affiliation": "School of Mechanical Engineering, Tel Aviv University",
+      "orcid": "0009-0004-4684-955X"
+    }
+  ],
+  "keywords": [
+    "computational homogenisation",
+    "mechanical metamaterials",
+    "machine-learning surrogates",
+    "out-of-distribution generalisation",
+    "micropolar",
+    "Cosserat",
+    "identifiability",
+    "eigenmodes"
+  ],
+  "license": "mit",
+  "access_right": "open",
+  "language": "eng",
+  "notes": "Preprint deposit. The manuscript is not under review at any journal at the time of deposit.",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.21734948",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "dataset"
+    },
+    {
+      "identifier": "https://github.com/davidmashiah/metaxfam22",
+      "relation": "isSupplementedBy",
+      "scheme": "url"
+    }
+  ],
+  "version": "1.0.0"
+}

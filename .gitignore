@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+data/
+descriptors/
+*.tmp
+*.tmp.npy
+*.tmp.npz
+_selcache_*.npz
+.DS_Store

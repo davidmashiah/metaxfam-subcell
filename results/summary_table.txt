@@ -1,0 +1,28 @@
+Pooled held-out C22 R^2, K=4 training families, 3 subset draws x 20 subsets x 2 RF seeds = 120 paired evaluations.
+median [IQR]; 'gain' = paired median difference; 'win' = fraction of the 120 evaluations where the arm beats its control.
+
+control: frac only             +0.082 [-0.195,+0.179]
+control: pixels only           -0.008 [-0.317,+0.200]
+control: pixels+frac           +0.019 [-0.201,+0.269]   gain vs pixels +0.037  win 0.87
+
+set           cost |                mode2 (3-D)  gain/frac   win |           frac+mode2 (4-D)  gain/frac   win |  chars(18)    all24
+orig_48       1.12 |     +0.332 [+0.115,+0.447]     +0.297  0.91 |     +0.386 [+0.195,+0.490]     +0.313  0.98 |     +0.288   +0.262
+orig_16       0.11 |     -0.049 [-0.328,+0.164]     -0.098  0.33 |     +0.118 [-0.061,+0.308]     +0.072  0.67 |     +0.093   +0.117
+v2_48         1.16 |     +0.385 [+0.285,+0.472]     +0.320  0.98 |     +0.448 [+0.285,+0.529]     +0.383  0.98 |     +0.347   +0.283
+v2_24grey     0.25 |     +0.285 [+0.195,+0.401]     +0.240  0.90 |     +0.356 [+0.271,+0.467]     +0.323  0.97 |     +0.355   +0.312
+v2_16grey     0.11 |     +0.176 [+0.082,+0.286]     +0.132  0.80 |     +0.246 [+0.176,+0.440]     +0.239  0.93 |     +0.273   +0.228
+v2_16binary   0.11 |     +0.159 [-0.016,+0.377]     +0.217  0.76 |     +0.291 [+0.134,+0.478]     +0.276  0.93 |     +0.184   +0.164
+
+Pixel-surrogate arms (feature APPENDED to 2304 raw pixels):
+set          |                  pix+mode2  gain/pix   win  gain/pix+frac |             pix+mode2+frac  gain/pix   win  gain/pix+frac   win
+orig_48      |     +0.069 [-0.200,+0.306]    +0.076  0.87         +0.046 |     +0.132 [-0.138,+0.328]    +0.118  0.93         +0.067  0.88
+v2_24grey    |     +0.130 [-0.050,+0.333]    +0.124  0.91         +0.095 |     +0.143 [-0.003,+0.350]    +0.177  0.94         +0.133  0.92
+v2_16grey    |     +0.062 [-0.081,+0.253]    +0.074  0.80         +0.044 |     +0.104 [-0.047,+0.307]    +0.117  0.85         +0.074  0.81
+
+C11 (the component that did NOT collapse in Paper 1) -- mode2 alone, median:
+  orig_48      -0.108   (frac only -0.057)
+  orig_16      -0.031   (frac only -0.057)
+  v2_48        -0.098   (frac only -0.057)
+  v2_24grey    +0.054   (frac only -0.057)
+  v2_16grey    +0.072   (frac only -0.057)
+  v2_16binary  +0.160   (frac only -0.057)

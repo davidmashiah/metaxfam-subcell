@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software or these data, please cite the preprint and this record."
+title: "Sub-cell eigenmode descriptors for metamaterial homogenisation surrogates"
+abstract: >-
+  Code, precomputed sub-cell elastodynamic eigenmode descriptors, full experimental
+  results and preprint for a study of why machine-learned surrogates for the homogenised
+  stiffness tensor fail to transfer across unseen unit-cell topologies. Homogenisation
+  volume-averages the microscopic stress, a projection that retains only the rigid
+  translations of the cell; the discarded sub-cell content is measured here and shown to
+  distinguish topologies that the stiffness tensor cannot distinguish at all.
+type: software
+authors:
+  - family-names: Mashiah
+    given-names: David
+    orcid: "https://orcid.org/0009-0004-4684-955X"
+    affiliation: "School of Mechanical Engineering, Tel Aviv University"
+    email: davidmashiah@mail.tau.ac.il
+version: "1.0.0"
+license: MIT
+keywords:
+  - computational homogenisation
+  - mechanical metamaterials
+  - machine-learning surrogates
+  - out-of-distribution generalisation
+  - micropolar
+  - Cosserat
+  - identifiability
+references:
+  - type: data
+    title: "MetaXFam22: a de-confounded 22-family metamaterial homogenisation benchmark"
+    authors:
+      - family-names: Mashiah
+        given-names: David
+    doi: "10.5281/zenodo.21734948"

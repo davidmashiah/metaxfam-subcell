@@ -1,0 +1,9 @@
+operation                                     ms/cell  x homog   (idle CPU, 30 cells, 10 families)
+48x48 homogenisation (the quantity replaced)    123.8     1.00
+original extractor, 48x48                       139.2     1.12
+original extractor, 16x16 binary                 13.2     0.11
+rebuilt extractor, 48x48                        143.6     1.16
+rebuilt extractor, 24x24 grey                    30.7     0.25
+rebuilt extractor, 16x16 grey                    13.7     0.11
+rebuilt extractor, 16x16 binary                  13.7     0.11
+rebuilt extractor, 12x12 grey                     9.0     0.07
