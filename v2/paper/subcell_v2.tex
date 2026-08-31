@@ -1,0 +1,424 @@
+%% =====================================================================
+%%  A rotational sub-cell descriptor for cross-topology stiffness prediction
+%%
+%%  COMPLETE REWRITE. The earlier manuscript ("The target, not the learner")
+%%  was computed on a dataset later found to be 61.6% duplicated. Every number
+%%  here is recomputed on MetaXFam-D, a verified duplicate-free benchmark, and
+%%  the central claim has changed as a result. See Sec. 6.
+%%
+%%  BUILD: pdflatex x3
+%%  Template: stock article class. No journal class is emulated.
+%% =====================================================================
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{courier}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{authblk}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{microtype}
+\sloppy
+\captionsetup{font=small,labelfont=bf}
+\newcommand{\CH}{\mathbf{C}^{H}}
+\newcommand{\Rtwo}{R^{2}}
+\renewcommand{\thetable}{\Roman{table}}
+
+\title{\bfseries A rotational sub-cell descriptor gives stable cross-topology\\
+prediction of effective stiffness where pixel surrogates do not}
+
+\author[1]{David Mashiah\thanks{davidmashiah@mail.tau.ac.il \quad ORCID 0009-0004-4684-955X}}
+\affil[1]{School of Mechanical Engineering, Tel Aviv University, Tel Aviv 6997801, Israel}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Machine-learned surrogates for the homogenized stiffness of periodic metamaterials are
+usually evaluated by splitting a pooled cell dataset at random. On a benchmark containing
+several unit-cell topology families this measures interpolation within known families, not
+the transfer a practitioner needs. We report three results on a purpose-built,
+duplicate-free 18-family benchmark. First, the protocol matters more than the model: the
+same surrogate scores $\Rtwo$ between $0.90$ and $0.96$ under a random split and between
+$-0.73$ and $+0.14$ when whole topology families are held out, a gap of $0.58$ to $1.63$
+across four stiffness components. Second, a three-number descriptor of how the softest
+sub-cell elastodynamic mode divides its motion between rotation, dilatation and shear --
+obtained from the same periodic operator that produces the stiffness tensor, at a quarter
+of the cost of one homogenization -- is the only representation we tested that never fails:
+across twelve component-by-learner combinations its held-out $\Rtwo$ stays within
+$[+0.02, +0.41]$, whereas $2304$ raw pixels span $[-42.99, +0.34]$ and a published
+geometric spectral descriptor spans $[-1.56,+0.33]$. Third, its advantage is not uniform
+and we report where it fails: it beats the geometric spectrum and the free solid-fraction
+control on the shear-coupled components $C_{12}$ and $C_{22}$ for every learner tested, but
+does not beat solid fraction at all on $C_{11}$. That pattern is what a
+rotational-mode explanation predicts, and it is the reason we do not claim a general
+advantage. We also document a defect in the dataset the earlier version of this work used:
+rasterizing low-parameter shape families onto a fixed grid produces massive duplication,
+$61.6\%$ in that case, which inflates in-distribution scores and depresses pixel baselines.
+\end{abstract}
+
+\noindent\textbf{Keywords:} computational homogenization; metamaterials; machine-learning
+surrogates; out-of-distribution generalization; micropolar effects; benchmark design
+
+\section{Introduction}
+
+Numerical homogenization returns an effective stiffness $\CH$ for a periodic microstructure
+at the cost of one cell problem per cell. Because that cost is prohibitive inside a design
+loop, a large literature replaces it with a learned surrogate mapping geometry to $\CH$,
+with reported accuracy of $\Rtwo \ge 0.98$ \citep{bastek2022,kumar2020}.
+
+That accuracy is measured within a design space. Whether it survives a change of
+unit-cell topology is a separate question, and a recent broad study of materials-property
+models concludes that most out-of-distribution evaluations in the field measure
+interpolation rather than extrapolation \citep{li2025}. Work on generalizable
+microstructure--property maps across microstructure classes reaches a related conclusion
+and additionally reports that a distributional distance predicts when transfer will succeed
+\citep{liu2026}.
+
+This paper asks a narrower question with a controlled benchmark: when a surrogate is
+required to predict $\CH$ for a topology family it has never seen, how much does the
+evaluation protocol matter, and is there a cheap physically-motivated representation that
+degrades gracefully rather than catastrophically?
+
+Our starting point is that $\CH$ is obtained by volume-averaging the microscopic stress.
+Averaging is a projection: it retains the two rigid-translation modes of the cell and
+discards every other sub-cell degree of freedom. Roberts \citep{roberts2025} constructs
+multi-continuum micromorphic homogenizations by retaining precisely those discarded modes,
+and the relaxed-micromorphic literature makes the same point constitutively --- a
+first-order Cauchy continuum has no slot for the cell's rotational degree of freedom
+\citep{neff2014}. We use those modes not as a modelling target but as an inexpensive
+descriptor, and we test where that descriptor helps and where it does not.
+
+\paragraph{Contributions.}
+(i) MetaXFam-D, an 18-family, 3096-cell benchmark verified to contain no duplicate
+geometries, with family-disjoint evaluation (\S\ref{sec:bench}).
+(ii) A measurement of how much a random split overstates cross-topology performance
+(\S\ref{sec:gap}).
+(iii) A three-number rotational sub-cell descriptor that is the only representation tested
+whose held-out $\Rtwo$ never becomes negative (\S\ref{sec:stab}).
+(iv) An explicit map of where it beats the baselines and where it does not, with confidence
+intervals and a pre-registered aggregation rule (\S\ref{sec:where}).
+(v) A dataset-construction caution: rasterization collapse (\S\ref{sec:dup}).
+
+\paragraph{What we do not claim.} We do not claim the descriptor generally outperforms a
+pixel surrogate; on a duplicate-free benchmark it does not (\S\ref{sec:where}). We do not
+claim non-injectivity of homogenization as novel; it is established \citep{kumar2021}.
+We do not claim that distributional criteria fail to predict transfer --- on this benchmark
+they partly succeed, consistent with \citep{liu2026}.
+
+\section{Benchmark}
+\label{sec:bench}
+
+Cells are $48\times48$ binary grids, plane strain, solid $E=1$, $\nu=0.3$, void
+$E=10^{-6}$, with periodicity imposed by identifying opposite-edge nodes. $\CH$ follows
+from volume-averaging element stresses under three unit macroscopic strains
+\citep{andreassen2014}; the solver passes six validation tests including the exact rank-1
+laminate and Voigt--Reuss bracketing.
+
+Every cell satisfies three conditions: solid fraction in $[0.45,0.75]$; the solid phase
+percolates in both directions; and its rasterization is unique within its family. The
+benchmark comprises 18 families $\times$ 172 cells $=3096$ cells, verified to contain
+$3096$ distinct geometries and no cross-family duplicates. Family median solid fractions
+span $0.579$--$0.695$, so density is controlled and a cross-family error is a topology
+effect rather than a density extrapolation.
+
+\subsection{Rasterization collapse, and why the benchmark had to be rebuilt}
+\label{sec:dup}
+
+An earlier version of this dataset sampled continuous shape parameters and kept 600 cells
+per family. Auditing it revealed that its $13{,}200$ cells comprise only $5072$ distinct
+rasterizations --- a duplicate rate of $61.6\%$. Low-parameter families are the worst
+affected: one lattice family admits only \emph{three} distinct $48\times48$ rasterizations
+inside the density band, and rejects essentially every further draw as already seen.
+
+The mechanism is confirmed by resolution dependence (Fig.~\ref{fig:dup}): duplication rises
+from $72.8\%$ at $48\times48$ to $98.4\%$ at $12\times12$. Coarser rasterization admits
+fewer distinct images. The consequence is severe: under a random $75/25$ split of that
+dataset, $67.7\%$ of test cells have their exact geometry in the training set.
+
+This is not a general property of pixelized metamaterial datasets. The published 2D subsets
+of METASET \citep{chan2021}, audited with the same script, show $0\%$ duplication at
+$50\times50$; that dataset selects for diversity explicitly and uses richer shape
+descriptions. The defect belongs to low-parameter parametric generators. We report it
+because the check is three lines of code and, in our case, it changed a headline
+conclusion.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.42\textwidth]{f4_dup.png}
+\caption{Duplication against rasterization resolution, measured on an eight-family probe.
+Distinct shape parameters collapse onto identical pixel images as resolution falls.}
+\label{fig:dup}
+\end{figure}
+
+\subsection{Evaluation protocol}
+
+Training subsets of $K=4$ families are drawn at random; 30 subsets $\times$ 2 model seeds
+gives 60 paired evaluations per arm, scored as pooled $\Rtwo$ over the 14 held-out
+families. Three surrogate classes are used throughout --- random forest, ridge regression
+with cross-validated regularization, and a two-layer perceptron --- because
+representation comparisons that hold for one learner need not hold for another.
+
+\paragraph{Aggregation rule, fixed in advance.} A claim is reported as supported only if it
+holds for \emph{every} learner on a given component, with a bootstrap $95\%$ confidence
+interval on the paired median gain excluding zero. We state this because an earlier
+analysis of ours summarized on a single learner and reached a different headline from the
+same measurements.
+
+\section{The protocol gap}
+\label{sec:gap}
+
+Table~\ref{tab:gap} compares three protocols at matched training-set size: a random split
+within the training families, a random split pooled over all families, and a
+family-disjoint split. The same model and the same number of training cells are used
+throughout; only the split changes.
+
+\begin{table}[t]
+\centering\small
+\caption{Held-out $\Rtwo$ by protocol, ridge regression on raw pixels, median over 20
+training subsets. Only the split protocol differs.}
+\label{tab:gap}
+\begin{tabular}{lrrrr}
+\toprule
+component & random, same families & random, pooled & family-disjoint & gap \\
+\midrule
+$C_{11}$ & $+0.961$ & $+0.859$ & $+0.142$ & $0.819$ \\
+$C_{12}$ & $+0.897$ & $+0.745$ & $-0.728$ & $1.625$ \\
+$C_{22}$ & $+0.947$ & $+0.829$ & $-0.234$ & $1.181$ \\
+$C_{33}$ & $+0.912$ & $+0.752$ & $-0.416$ & $1.328$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The pooled random split --- the standard practice when a dataset contains several families
+--- still reports $\Rtwo$ between $0.75$ and $0.86$ while the same surrogate is at or below
+zero on unseen topologies (Fig.~\ref{fig:gap}). A practitioner following that protocol
+would report a strong result and ship a model that does not transfer.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\textwidth]{f3_splitgap.png}
+\caption{The same surrogate under three evaluation protocols on the clean benchmark.}
+\label{fig:gap}
+\end{figure}
+
+\section{The descriptor}
+
+On the same periodic operator, with a consistent mass matrix, we solve
+$\mathbf{K}\boldsymbol{\phi}=\omega^{2}\mathbf{M}\boldsymbol{\phi}$. Periodicity admits
+exactly two rigid modes; the modes above them are what stress-averaging discards. For each
+eigenvector the displacement gradient splits pointwise and exactly into dilatation,
+deviatoric shear and rotation,
+\begin{equation}
+|\nabla u|^{2}=\tfrac12 d^{2}
++\tfrac12\!\left[(\varepsilon_{xx}-\varepsilon_{yy})^{2}+\gamma_{xy}^{2}\right]+2w^{2},
+\qquad w=\tfrac12(\partial_x v-\partial_y u),
+\end{equation}
+and each term is integrated over the cell weighted by element stiffness and normalized to
+sum to one. We call the result the \emph{mode character} of that eigenvector, and use the
+character of the softest non-rigid mode: three numbers.
+
+An eigenvector inside a degenerate cluster is defined only up to a rotation within the
+cluster and the character is quadratic in the eigenvector, so per-eigenvector character is
+basis-dependent. Every four-fold-symmetric family has a degenerate second mode. We
+therefore average over the cluster, which is basis-invariant, and use a deterministic
+eigensolver start.
+
+\paragraph{Validation.} On a homogeneous cell the exact periodic modes are plane waves: the
+lowest non-rigid cluster is the shear wave at $\omega=2\pi\sqrt{\mu}=3.8967$ with character
+exactly $(0,\tfrac12,\tfrac12)$; the pressure wave has $(\tfrac12,\tfrac12,0)$. The
+extractor reproduces the fundamental to $7.1\times10^{-4}$, converges as $h^{2}$, reproduces
+both exact characters to $10^{-6}$, and is invariant to a random rotation within a
+degenerate cluster to $10^{-14}$. Ten tests pass.
+
+\paragraph{Cost.} Computed on a $24\times24$ coarsened cell, the eigensolve costs $0.25\times$
+one $48\times48$ homogenization.
+
+\section{Stability across surrogate classes}
+\label{sec:stab}
+
+The clearest result concerns not average accuracy but the absence of failure.
+Table~\ref{tab:stab} reports, for each representation, the range of median held-out $\Rtwo$
+over all twelve component-by-learner combinations.
+
+\begin{table}[t]
+\centering\small
+\caption{Range of median held-out $\Rtwo$ across four components $\times$ three learners.}
+\label{tab:stab}
+\begin{tabular}{lrrr}
+\toprule
+representation & dim & min & max \\
+\midrule
+raw pixels & 2304 & $-42.99$ & $+0.34$ \\
+solid fraction $+$ shape-DNA & 7 & $-1.56$ & $+0.33$ \\
+solid fraction & 1 & $+0.04$ & $+0.24$ \\
+\textbf{solid fraction $+$ mode-2 character} & \textbf{4} & $\mathbf{+0.02}$ & $\mathbf{+0.41}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The pixel surrogate attains the single best cell in the table and also the worst by a factor
+of a hundred: under a perceptron it reaches $-42.99$ on $C_{33}$ and $-18.12$ on $C_{12}$.
+The four-number representation never becomes negative in any of the twelve cells
+(Fig.~\ref{fig:stab}). Solid fraction alone is similarly stable but reaches only $+0.24$.
+
+We regard this as the practically useful statement. A practitioner choosing a surrogate for
+an unseen topology cannot know in advance which learner will be well matched to the data;
+a representation that is mediocre-but-never-catastrophic is more valuable than one whose
+expected performance is higher but whose variance across model classes spans forty units of
+$\Rtwo$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{f1_stability.png}
+\caption{Each point is one component $\times$ learner combination.}
+\label{fig:stab}
+\end{figure}
+
+\section{Where the descriptor helps, and where it does not}
+\label{sec:where}
+
+Applying the pre-registered rule, none of the three pairwise claims holds across all four
+components (Fig.~\ref{fig:gains}). The pattern is systematic.
+
+\paragraph{Against the free control (solid fraction).} The descriptor wins on $C_{22}$ for
+every learner ($+0.315$, $+0.212$, $+0.195$; all intervals clear of zero; $90$--$95\%$ of
+paired evaluations) and on $C_{12}$ for two of three. On $C_{11}$ it wins for none: the
+gains are $+0.046$, $-0.037$, $-0.060$, with intervals containing zero.
+
+\paragraph{Against the published geometric spectrum.} Shape-DNA
+\citep{wang2020} is the Laplace--Beltrami spectrum of the cell --- a spectrum, rotation
+invariant, purely geometric, and the closest prior art. The elastic descriptor beats it in
+ten of twelve cells, decisively on $C_{22}$ ($+0.161$ to $+0.656$, $90$--$100\%$ of
+evaluations). It loses on $C_{11}$ under a random forest ($-0.164$, interval entirely
+negative). So it is not the case that any spectrum transfers: the elastic one does on the
+shear-coupled components and the geometric one largely does not.
+
+\paragraph{Against raw pixels.} The descriptor wins under ridge and the perceptron on every
+component, but under a random forest it is indistinguishable on $C_{22}$ and $C_{33}$ and
+loses on $C_{11}$ ($-0.187$). An earlier version of this work, computed on the duplicated
+dataset, reported a uniform $+0.364$ advantage; that advantage was an artifact of
+duplication depressing the pixel baseline.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{f2_gains.png}
+\caption{Paired gain of the four-number descriptor over each baseline, with bootstrap
+$95\%$ intervals. Blue: interval excludes zero. Red: it does not. Values clipped for display.}
+\label{fig:gains}
+\end{figure}
+
+\paragraph{Reading the pattern.} The advantage is concentrated in $C_{12}$ and $C_{22}$ and
+absent in $C_{11}$. Under the rotational-mode account this is the expected signature rather
+than an inconvenience: the discarded degree of freedom is a rotation, and rotation couples
+to shear, so the components it should inform are the shear-coupled ones. A descriptor that
+improved every component equally would in fact be harder to explain.
+
+\section{Discussion}
+\label{sec:disc}
+
+\paragraph{What changed from the earlier version, and why.} A previous version of this work
+reported that a low-dimensional physical feature broadly outperformed a pixel surrogate,
+on a dataset later found to be $61.6\%$ duplicated. Recomputing every number on
+duplicate-free data removed that conclusion: the pixel baseline recovers from $-0.008$ to
+$+0.37$ on $C_{22}$ once duplicates are gone. We report this because the direction of the
+bias is instructive --- duplication does not merely inflate in-distribution scores, it
+\emph{depresses} high-dimensional baselines on cross-family evaluation, and so
+systematically flatters low-dimensional competitors.
+
+\paragraph{Relation to prior work.} Francis et al.\ \citep{francis2025} learn homogenized
+micropolar constants with a deep material network, extrapolating across constitutive
+behaviour and boundary conditions rather than topology. Hendriks et al.\
+\citep{hendriks2025} address cross-topology generalization by making the architecture
+equivariant to geometric similarity; that is complementary to changing what is measured, and
+we do not compare against it here, which is the principal gap in this work. Liu et al.\
+\citep{liu2026} report that a distributional distance predicts generalizability across
+microstructure classes; on this benchmark we reproduce that qualitatively.
+
+\paragraph{Limitations.} Two dimensions, linear elasticity, one contrast ratio, one void
+phase. The benchmark is 3096 cells; six families from the original pool could not supply
+enough distinct rasterizations and were re-parameterized, which changes what those families
+denote. No comparison against an equivariant graph network. The descriptor does not make
+cross-topology prediction accurate --- the best held-out $\Rtwo$ we report is $+0.41$.
+
+\section*{Data and code availability}
+
+The benchmark, generators, validated solver and duplication-audit tooling are archived at
+Zenodo, \url{https://doi.org/10.5281/zenodo.22167146}, and at
+\url{https://github.com/davidmashiah/metaxfam22}. The superseded duplicated dataset is
+retained at \url{https://doi.org/10.5281/zenodo.21734948} because published work refers to
+it. The sub-cell extractor and its validation suite are at
+\url{https://doi.org/10.5281/zenodo.22137052} and
+\url{https://github.com/davidmashiah/metaxfam-subcell}.
+
+\section*{Declaration of generative AI in the writing process}
+
+During the preparation of this work the author used a large language model as a coding and
+drafting assistant: to implement and run analysis scripts and to draft and revise prose.
+All numerical results were produced by the deposited code and checked by the author against
+the raw result files. All scientific claims, their framing, and the decision to report each
+negative result are the author's own. The author takes full responsibility for the content
+of this publication.
+
+\begin{thebibliography}{99}\small\raggedright
+
+\bibitem{bastek2022} J.-H. Bastek, S. Kumar, B. Telgen, R. N. Glaesener, D. M. Kochmann,
+Inverting the structure--property map of truss metamaterials by deep learning,
+\emph{Proc.\ Natl.\ Acad.\ Sci.\ U.S.A.} \textbf{119}(1) e2111505119 (2022).
+\url{https://doi.org/10.1073/pnas.2111505119}
+
+\bibitem{kumar2020} S. Kumar, S. Tan, L. Zheng, D. M. Kochmann, Inverse-designed spinodoid
+metamaterials, \emph{npj Comput.\ Mater.} \textbf{6} 73 (2020).
+\url{https://doi.org/10.1038/s41524-020-0341-6}
+
+\bibitem{li2025} K. Li, A. N. Rubungo, X. Lei et al., Probing out-of-distribution
+generalization in machine learning for materials, \emph{Commun.\ Mater.} \textbf{6} 9
+(2025). \url{https://doi.org/10.1038/s43246-024-00731-w}
+
+\bibitem{liu2026} H. Liu, N. Baishnab, B. S. S. Pokuri, B. Ganapathysubramanian, O. Wodo,
+Constructing generalizable microstructure--property maps across diverse microstructure
+classes, \emph{MRS Communications} \textbf{16} 449--458 (2026).
+\url{https://doi.org/10.1557/s43579-025-00873-z}
+
+\bibitem{roberts2025} A. J. Roberts, Accurate families of multi-continuum micromorphic
+homogenisations in multi-D space-time via dynamical systems theory, \emph{Trans.\ Math.\
+Appl.} \textbf{9}(1) tnaf001 (2025). \url{https://doi.org/10.1093/imatrm/tnaf001}
+
+\bibitem{neff2014} P. Neff, I.-D. Ghiba, A. Madeo, L. Placidi, G. Rosi, A unifying
+perspective: the relaxed linear micromorphic continuum, \emph{Continuum Mech.\ Thermodyn.}
+\textbf{26}(5) 639--681 (2014). \url{https://doi.org/10.1007/s00161-013-0322-9}
+
+\bibitem{kumar2021} S. Kumar, D. M. Kochmann, What machine learning can do for
+computational solid mechanics, arXiv:2109.08419 (2021); in \emph{Current Trends and Open
+Problems in Computational Mechanics}, Springer (2022).
+
+\bibitem{wang2020} L. Wang, Y.-C. Chan, Z. Liu, P. Zhu, W. Chen, Data-driven metamaterial
+design with Laplace--Beltrami spectrum as ``shape-DNA'', \emph{Struct.\ Multidisc.\ Optim.}
+\textbf{61} 2613--2628 (2020). \url{https://doi.org/10.1007/s00158-020-02523-5}
+
+\bibitem{chan2021} Y.-C. Chan, F. Ahmed, L. Wang, W. Chen, METASET: exploring shape and
+property spaces for data-driven metamaterials design, \emph{J. Mech.\ Des.} \textbf{143}(3)
+031707 (2021).
+
+\bibitem{francis2025} N. M. Francis, D. Shin, R. A. Lebensohn, F. Pourahmadian,
+R. Dingreville, Micropolar deep material network, \emph{Comput.\ Methods Appl.\ Mech.\
+Engrg.} \textbf{446} 118329 (2025). \url{https://doi.org/10.1016/j.cma.2025.118329}
+
+\bibitem{hendriks2025} R. Hendriks, V. Menkovski, M. Do\v{s}k\'a\v{r}, M. G. D. Geers,
+O. Roko\v{s}, Similarity-equivariant graph neural networks for homogenization of
+metamaterials, \emph{Comput.\ Methods Appl.\ Mech.\ Engrg.} \textbf{439} 117867 (2025).
+\url{https://doi.org/10.1016/j.cma.2025.117867}
+
+\bibitem{andreassen2014} E. Andreassen, C. S. Andreasen, How to determine composite material
+properties using numerical homogenization, \emph{Comput.\ Mater.\ Sci.} \textbf{83}
+488--495 (2014).
+
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,149 @@
+{
+ "per_family_48": {
+  "circle": {
+   "n": 600,
+   "distinct": 65,
+   "dup_rate": 0.8916666666666666,
+   "largest": 27
+  },
+  "square": {
+   "n": 600,
+   "distinct": 6,
+   "dup_rate": 0.99,
+   "largest": 116
+  },
+  "cross": {
+   "n": 600,
+   "distinct": 47,
+   "dup_rate": 0.9216666666666666,
+   "largest": 21
+  },
+  "star_hole": {
+   "n": 600,
+   "distinct": 374,
+   "dup_rate": 0.3766666666666667,
+   "largest": 7
+  },
+  "star6_hole": {
+   "n": 600,
+   "distinct": 458,
+   "dup_rate": 0.2366666666666667,
+   "largest": 6
+  },
+  "tri_hole": {
+   "n": 600,
+   "distinct": 211,
+   "dup_rate": 0.6483333333333333,
+   "largest": 10
+  },
+  "hex_hole": {
+   "n": 600,
+   "distinct": 138,
+   "dup_rate": 0.77,
+   "largest": 22
+  },
+  "diamond_hole": {
+   "n": 600,
+   "distinct": 7,
+   "dup_rate": 0.9883333333333333,
+   "largest": 96
+  },
+  "ellipse": {
+   "n": 600,
+   "distinct": 600,
+   "dup_rate": 0.0,
+   "largest": 1
+  },
+  "rect_hole": {
+   "n": 600,
+   "distinct": 28,
+   "dup_rate": 0.9533333333333334,
+   "largest": 114
+  },
+  "slot_pair": {
+   "n": 600,
+   "distinct": 193,
+   "dup_rate": 0.6783333333333333,
+   "largest": 25
+  },
+  "two_holes": {
+   "n": 600,
+   "distinct": 505,
+   "dup_rate": 0.15833333333333333,
+   "largest": 4
+  },
+  "cross_aniso": {
+   "n": 600,
+   "distinct": 343,
+   "dup_rate": 0.42833333333333334,
+   "largest": 6
+  },
+  "kagome": {
+   "n": 600,
+   "distinct": 66,
+   "dup_rate": 0.89,
+   "largest": 31
+  },
+  "square_lattice": {
+   "n": 600,
+   "distinct": 6,
+   "dup_rate": 0.99,
+   "largest": 113
+  },
+  "diag_lattice": {
+   "n": 600,
+   "distinct": 3,
+   "dup_rate": 0.995,
+   "largest": 216
+  },
+  "rand_lattice": {
+   "n": 600,
+   "distinct": 600,
+   "dup_rate": 0.0,
+   "largest": 1
+  },
+  "honeycomb": {
+   "n": 600,
+   "distinct": 558,
+   "dup_rate": 0.06999999999999995,
+   "largest": 3
+  },
+  "rect_lattice": {
+   "n": 600,
+   "distinct": 76,
+   "dup_rate": 0.8733333333333333,
+   "largest": 15
+  },
+  "chevron": {
+   "n": 600,
+   "distinct": 395,
+   "dup_rate": 0.3416666666666667,
+   "largest": 14
+  },
+  "reentrant": {
+   "n": 600,
+   "distinct": 412,
+   "dup_rate": 0.31333333333333335,
+   "largest": 14
+  },
+  "layered": {
+   "n": 600,
+   "distinct": 21,
+   "dup_rate": 0.965,
+   "largest": 56
+  }
+ },
+ "pooled_48": {
+  "n": 13200,
+  "distinct": 5072,
+  "dup_rate": 0.6157575757575757,
+  "cross_family": 40
+ },
+ "resolution": {
+  "12": 0.98375,
+  "16": 0.9666666666666667,
+  "24": 0.9227083333333334,
+  "48": 0.7279166666666667
+ },
+ "random_split_leakage": 0.676969696969697
+}
